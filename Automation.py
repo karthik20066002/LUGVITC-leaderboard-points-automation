@@ -76,7 +76,6 @@ for row in sheet.iter_rows(min_row=2, max_col=2, values_only=True):
     task = task[0].strip()
     rubrics[task] = points
 
-print(rubrics)
 
 # Reading 'Technical Support Cyber-0-Day' sheet
 sheet = wb['Tech Support C0D3']
