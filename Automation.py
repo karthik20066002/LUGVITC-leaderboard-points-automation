@@ -8,12 +8,21 @@
 # License:          Apache License Version 2.0
 #
 # Developed by:     Meit Sant [Github:MT_276]
-#                   Karthik 
+#                   Karthik Ramanathan Lakshmanan [Github:karthik20066002] 
 #-------------------------------------------------------------------------------
+#> Notes to Meit:
+#> Dude, everything was broken asf. Your code did not work at all.
+#> I've rewritten almost everything in the program, except the reading of the data file and reading the rubrics.
+#> Update 4:34AM, The Rubrics were also unusable. Reformatted.
+#> If there is a '>' sign in front of the '#', the code has been changed by me, and you should really have a look at it.
+#> Any issues, you know where to get me.
+#> ~Axiss
+#-------------------------------------------------------------------------------
+
 
 print(f'Points table automation for LUGVITC')
 print('Licence          : Apache License Version 2.0')
-
+print('[PROCESS] Starting.')
 import openpyxl, sys
 
 # Checking if data file exits 
@@ -37,9 +46,12 @@ except FileNotFoundError:
 except:
     print('Error occured while reading data file')
     exit()
-    
+
+
 # Get the file name from the path
 print(f"[INFO] Chosen file : {path.split('/')[-1]}")
+
+
 # Load the workbook
 try:
     wb = openpyxl.load_workbook(path)
@@ -47,17 +59,15 @@ try:
 except:
     print(f"[ERROR] Error occured while loading the workbook")
     sys.exit()
-# Define member dictionary. This dictionary will be saved to another excel file.
-member_data = {
-    'Reg No': '',
-    'Name' : '',
-    'Contributions' : '',
-    'Events' : '',
-    'Points' : 0
-}
+
+
+#> Define all members list. This will be iterated through to add to the Excel sheet.
+all_members_data=[]
 
 # Load the rubrics sheet
 sheet = wb['Rubric']
+
+
 # Read the Rubrics data into a dictionary
 rubrics = {}
 for row in sheet.iter_rows(min_row=2, max_col=2, values_only=True):
@@ -66,57 +76,100 @@ for row in sheet.iter_rows(min_row=2, max_col=2, values_only=True):
     task = task[0].strip()
     rubrics[task] = points
 
-
+print(rubrics)
 
 # Reading 'Technical Support Cyber-0-Day' sheet
-sheet = wb['Technical Support Cyber-0-Day']
-# Read the ith row
-row_data = []
-for cell in sheet[2]:
-    row_data.append(cell.value)
-    
-# Calculating the points 
-member_data['Reg No'] = row_data[1] # Adds the registration number to the dictionary
-member_data['Name'] = row_data[0] # Adds the name to the dictionary
+sheet = wb['Tech Support C0D3']
 
-if row_data[2] == 'Yes' or row_data[3] == 'Yes':
-    member_data['Contributions'] += 'Tech Support, '
-    member_data['Events'] += 'Cyber-0-Day 3.0, '
-if row_data[2] == 'Yes':
-    member_data['Points'] += rubrics['Technical Support']
-if row_data[3] == 'Yes':
-    member_data['Points'] += rubrics['Technical Support']
+#> Iterate through each row
+for i in range(2,sheet.max_row+2):
 
-print(member_data)
+    #> Define row data. Holds the directly scraped value, raw data only.
+    row_data = []
+
+    #> Define member dictionary. This dictionary will hold the properly formatted data.
+    member_data = {
+    'Reg No': '',
+    'Name' : '',
+    'Contributions' : '',
+    'Events' : '',
+    'Points' : 0
+    }
+
+    #> Grabbing each individual cell in the row
+    for j in range(1,7): 
+        cell_item = sheet.cell(row = i, column = j)
+        row_data.append(cell_item.value)
+    else:
+
+
+    #> Calculating the points 
+        if row_data[1]==None: #> We keep this to make sure no null rows clutter the sheet.
+            pass
+
+
+        else:
+            member_data['Reg No'] = row_data[1] #> Adds the registration number to the dictionary
+            member_data['Name'] = row_data[0] #> Adds the name to the dictionary
+
+            if row_data[5] == 'Yes' or row_data[3] == 'Yes' or row_data[4] == 'Yes':
+                member_data['Contributions'] += 'Tech Support, '
+                member_data['Events'] += 'Cyber-0-Day 3.0, '
+            if row_data[3] == 'Yes':
+                member_data['Points'] += rubrics['Overnight']
+            if row_data[4] == 'Yes':
+                member_data['Points'] += rubrics['Technical Support']
+            if row_data[5] == 'Yes':
+                member_data['Points'] += rubrics['Technical Support']
+
+
+            all_members_data.append(member_data) #> Appends it to the all member data list.
+
+#> NOTE: The block below is temporarily commented due to it not searching for the occurances. Must fix.
 # Searching reg no for other occurances in the workbook
-for sheet in wb.sheetnames:
-    print(sheet)
-    if sheet == 'Technical Support Cyber-0-Day':
-        continue
-    sheet = wb[sheet]
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        print(row)
+# for sheet in wb.sheetnames:
+#     print(sheet)
+#     if sheet == 'Technical Support Cyber-0-Day':
+#         continue
+#     sheet = wb[sheet]
+#     for row in sheet.iter_rows(min_row=2, values_only=True):
+#         print(row)
 
 # Close the workbook
 wb.close()
+print(r'[INFO] Data trawling complete.')
 
-# Saving the data to a new excel file
+
+#> Saving the data to a new excel file. Opening new workbook.
+print(r'[INFO] Opening new workbook.')
 scraped_values = openpyxl.Workbook()
-sheet_of_points = scraped_values.active
-sheet_of_points.title = r"Sheet of Points"
+sheet_of_points = scraped_values.active #> New workbook handle
 
+
+book_name = input(r"[INPUT] Enter workbook name >> ")
+sheet_name = input(r"[INPUT] Enter worksheet name >> ")
+sheet_of_points.title = r""+sheet_name
+
+#> Grabbing the headings and writing them to the new excel sheet.
 headers = list(member_data.keys())
-for i in range(len(member_data)):
+for i in range(len(headers)):
     temp_cell = sheet_of_points.cell(row = 1, column = i+1)
     temp_cell.value = headers[i]
 
-
-for i in range(len(member_data)):
-    value_cell = sheet_of_points.cell(row = 2, column = i+1 )
-    temp_cell = sheet_of_points.cell(row = 1, column = i+1)
-    value_cell.value = member_data[temp_cell.value]
-
-scraped_values.save(r"demo.xlsx")
+#> Iterating through the dictionary and writing the values
+for j in range(1,len(all_members_data)):
+    for i in range(len(headers)):
+        value_cell = sheet_of_points.cell(row = j+1, column = i+1 )
+        temp_cell = sheet_of_points.cell(row = 1, column = i+1)
+        value_cell.value = all_members_data[j][temp_cell.value]
+print('[INFO] Data written to buffer.')
+#> And finally, save the excel sheet in .xlsx format.
+#> Something to look at: How do I make the document format newer? "Excel 2007 spreadsheet" is kinda old.
+print('[INFO] Data saved to Excel file in same directory.')
+scraped_values.save(book_name+r".xlsx")
+print('[INFO] Closing file handles.')
+scraped_values.close()
+print('[PROCESS] Complete. Terminating...')
 
 
 
